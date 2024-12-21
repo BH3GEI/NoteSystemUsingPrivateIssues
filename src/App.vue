@@ -52,12 +52,14 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLocalStorage } from '@vueuse/core'
+import { Octokit } from '@octokit/rest'
 
 const router = useRouter()
 const token = ref('')
 const folders = ref([])
 const storedToken = useLocalStorage('github_token', '')
 const isAuthenticated = ref(false)
+const repoInfo = useLocalStorage('github_repo_info', { owner: '', repo: '' })
 
 onMounted(() => {
   if (storedToken.value) {
@@ -68,10 +70,38 @@ onMounted(() => {
 
 async function authenticate() {
   if (token.value) {
-    storedToken.value = token.value
-    isAuthenticated.value = true
-    await loadFolders()
-    router.push('/')
+    try {
+      const octokit = new Octokit({ auth: token.value })
+      
+      // 获取用户信息
+      const { data: user } = await octokit.users.getAuthenticated()
+      
+      // 创建仓库名称
+      const repoName = 'private-notes-' + Date.now()
+      
+      // 创建私有仓库
+      const { data: repo } = await octokit.repos.createForAuthenticatedUser({
+        name: repoName,
+        private: true,
+        auto_init: true,
+        description: 'Private notes repository created by Note System'
+      })
+      
+      // 保存仓库信息
+      repoInfo.value = {
+        owner: user.login,
+        repo: repoName
+      }
+      
+      // 保存token并更新认证状态
+      storedToken.value = token.value
+      isAuthenticated.value = true
+      await loadFolders()
+      router.push('/')
+    } catch (error) {
+      console.error('Authentication failed:', error)
+      alert('Failed to authenticate or create repository. Please check your token.')
+    }
   }
 }
 

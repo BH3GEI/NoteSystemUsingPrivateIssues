@@ -50,6 +50,7 @@ const route = useRoute()
 const router = useRouter()
 const notes = ref([])
 const token = useLocalStorage('github_token', '')
+const repoInfo = useLocalStorage('github_repo_info', { owner: '', repo: '' })
 
 const currentFolder = computed(() => route.params.id)
 
@@ -64,8 +65,8 @@ onMounted(async () => {
 async function loadNotes() {
   try {
     const response = await octokit.issues.list({
-      owner: 'YOUR_USERNAME', // TODO: Make this configurable
-      repo: 'YOUR_REPO',
+      owner: repoInfo.value.owner,
+      repo: repoInfo.value.repo,
       state: 'open',
       labels: currentFolder.value ? [currentFolder.value] : undefined
     })
@@ -78,6 +79,7 @@ async function loadNotes() {
     }))
   } catch (error) {
     console.error('Failed to load notes:', error)
+    alert('Failed to load notes. Please try again.')
   }
 }
 

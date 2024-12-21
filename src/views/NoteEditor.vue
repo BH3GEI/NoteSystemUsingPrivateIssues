@@ -58,6 +58,7 @@ import 'highlight.js/styles/github.css'
 const route = useRoute()
 const router = useRouter()
 const token = useLocalStorage('github_token', '')
+const repoInfo = useLocalStorage('github_repo_info', { owner: '', repo: '' })
 const title = ref('')
 const content = ref('')
 
@@ -78,8 +79,8 @@ onMounted(async () => {
 async function loadNote() {
   try {
     const response = await octokit.issues.get({
-      owner: 'YOUR_USERNAME', // TODO: Make this configurable
-      repo: 'YOUR_REPO',
+      owner: repoInfo.value.owner,
+      repo: repoInfo.value.repo,
       issue_number: route.params.id
     })
     
@@ -87,6 +88,7 @@ async function loadNote() {
     content.value = response.data.body
   } catch (error) {
     console.error('Failed to load note:', error)
+    alert('Failed to load note. Please try again.')
   }
 }
 
@@ -95,8 +97,8 @@ async function saveNote() {
     if (route.params.id) {
       // Update existing note
       await octokit.issues.update({
-        owner: 'YOUR_USERNAME', // TODO: Make this configurable
-        repo: 'YOUR_REPO',
+        owner: repoInfo.value.owner,
+        repo: repoInfo.value.repo,
         issue_number: route.params.id,
         title: title.value,
         body: content.value
@@ -104,8 +106,8 @@ async function saveNote() {
     } else {
       // Create new note
       await octokit.issues.create({
-        owner: 'YOUR_USERNAME', // TODO: Make this configurable
-        repo: 'YOUR_REPO',
+        owner: repoInfo.value.owner,
+        repo: repoInfo.value.repo,
         title: title.value,
         body: content.value
       })
@@ -113,6 +115,7 @@ async function saveNote() {
     router.push('/')
   } catch (error) {
     console.error('Failed to save note:', error)
+    alert('Failed to save note. Please try again.')
   }
 }
 </script>
